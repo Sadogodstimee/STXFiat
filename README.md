@@ -1,81 +1,111 @@
-# STXFiat.clar
+# STXFiat Multi-Collateral Stablecoin Protocol
 
-This contract implements a multi-collateral stablecoin protocol for the Stacks blockchain. It features algorithmic supply management, cross-chain bridge functionality, enhanced governance, and security mechanisms.
+A comprehensive stablecoin implementation for the Stacks blockchain with advanced features including position health scoring, enhanced liquidation rewards, and governance.
 
----
+## Core Features
 
-## Features
+### Multi-Collateral System
+- Support for multiple collateral types
+- Configurable parameters per collateral:
+  - Collateral ratio
+  - Liquidation threshold
+  - Stability fee
+  - Debt ceiling
 
-- **Multi-Collateral System:** Supports multiple collateral types, each with custom parameters (collateral ratio, liquidation threshold, stability fee, debt ceiling).
-- **Stablecoin Minting & Repayment:** Users can deposit collateral to mint stablecoins and repay debt to withdraw collateral.
-- **Liquidation:** Positions below the liquidation threshold can be liquidated.
-- **Algorithmic Supply Management:** Rebase mechanism adjusts supply based on price deviation from the target.
-- **Cross-Chain Bridge:** Secure bridge system with validator signatures for cross-chain transfers.
-- **Governance & Security:** Blacklisting, transfer limits, emergency mode, and parameter updates.
-- **Transaction Logging:** All major actions are logged for transparency.
+### Position Management
+- Deposit collateral and mint stablecoins
+- Repay debt and withdraw collateral
+- Real-time position health tracking (0-100 scale)
+- Risk level categorization (low, medium, high, critical)
 
----
+### Price Stability
+- Algorithmic supply management via rebasing
+- Price oracle integration
+- TWAP (Time-Weighted Average Price) calculations
+- Manual price controls for testing
 
-## Key Functions
+### Advanced Features
+1. **Position Health Scoring**
+   - Health scores on 0-100 scale
+   - Risk level categorization
+   - Liquidation risk assessment
 
-### Initialization & Oracle
+2. **Enhanced Liquidation**
+   - Liquidator reward system
+   - 5% bonus for liquidators
+   - Performance tracking
 
-- `initialize`: Initializes the contract and sets the owner.
-- `set-price-oracle`, `remove-price-oracle`: Manage the price oracle contract.
-- `set-current-price`, `manual-set-price`: Set the stablecoin price manually (for testing).
+3. **Fee Management**
+   - Protocol fee collection (0.05%)
+   - Fee distribution system
+   - Multiple distribution categories
 
-### Collateral Management
+4. **Batch Operations**
+   - Support for multiple operations
+   - Transaction batching
+   - Result tracking
 
-- `add-collateral-type`: Add a new collateral type with parameters.
-- `deposit-collateral-and-mint`: Deposit collateral and mint stablecoins.
-- `repay-debt-and-withdraw`: Repay debt and withdraw collateral.
+5. **Analytics & Monitoring**
+   - Position analytics
+   - Collateral utilization tracking
+   - Error logging system
 
-### Liquidation
-
-- `liquidate-position`: Liquidate under-collateralized positions.
-
-### Supply Management
-
-- `rebase-supply`: Algorithmically adjust supply based on price deviation.
-
-### Bridge
-
-- `add-bridge-validator`: Add a validator for bridge operations.
-- `initiate-bridge-transfer`: Initiate a cross-chain transfer.
-- `validate-bridge-request`: Validators sign bridge requests.
-- `complete-bridge-in`: Complete incoming bridge transfers.
-
-### Transfers & Security
-
-- `transfer`: Enhanced transfer function with blacklist and rate limiting.
-- `enable-emergency-mode`, `disable-emergency-mode`: Emergency controls.
-- `blacklist-address`: Blacklist or unblacklist an address.
-- `update-transfer-limits`: Update transfer limits and cooldown.
-
-### Governance
-
-- `update-rebase-parameters`: Update rebase parameters.
-- `update-bridge-parameters`: Update bridge fee and validator count.
-
-### Read-Only Queries
-
-- `get-user-position`, `get-collateral-info`, `get-global-stats`, `get-bridge-request`, `get-price-history`, `balance-of`, `get-total-supply`, `get-contract-owner`, `is-initialized`, `get-transaction-history`, `get-current-stablecoin-price`, `get-oracle-info`, `check-position-safety`
-
----
+6. **Governance**
+   - Proposal system
+   - Voting mechanism
+   - Parameter updates
 
 ## Usage
 
-Deploy the contract, initialize it, add collateral types, and interact with minting, repayment, transfer, and bridge functions. Use governance functions to update parameters and manage security.
+```clarity
+;; Initialize contract
+(contract-call? .stxfiat initialize)
 
----
+;; Add collateral type
+(contract-call? .stxfiat add-collateral-type 
+    'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM 
+    'ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG
+    u150    ;; 150% collateral ratio
+    u130    ;; 130% liquidation threshold
+    u5      ;; 5% stability fee
+    u1000000000) ;; 1M debt ceiling
 
-## Notes
+;; Deposit and mint
+(contract-call? .stxfiat deposit-collateral-and-mint
+    'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+    u1000   ;; collateral amount
+    u500)   ;; mint amount
+```
 
-- This contract is designed for development and testing. It is not audited for production use.
-- Collateral transfers assume SIP-010 compatibility but are mocked for simplicity.
+## Contract Architecture
 
----
+- [`contracts/STXFiat.clar`]STXFiat.clar ): Main stablecoin contract
+- [`contracts/oracle.clar`](contracts/oracle.clar ): Price oracle implementation
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Check contracts
+clarinet check
+```
+
+## Important Notes
+
+- This contract is for development and testing
+- Not audited for production use
+- Includes mock implementations for testing
+- Uses Clarity language features for Stacks blockchain
 
 ## License
 
-See the project root for license information.
+See [`package.json`](package.json ) for license information.
+
+---
+
+For detailed function documentation and implementation details, see the source code comments.
