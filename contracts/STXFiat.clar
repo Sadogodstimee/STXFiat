@@ -288,16 +288,28 @@
       (err ERR-DIVISION-BY-ZERO)
       (ok (/ numerator denominator))))
 
-;; Simplified price fetching - uses stored price for now
-(define-private (get-current-price)
-  (ok (var-get current-price)))
+;; Oracle calls are limited to known contract identifiers.
+(define-private (get-stablecoin-price-from-oracle (oracle principal))
+  (if (is-eq oracle .oracle)
+      (contract-call? .oracle get-stablecoin-price)
+      (err ERR-INVALID-IMPLEMENTATION)))
 
-;; Simplified collateral value calculation with fallback
+(define-private (get-asset-price-from-oracle (oracle principal))
+  (if (is-eq oracle .oracle)
+      (contract-call? .oracle get-price)
+      (err ERR-INVALID-IMPLEMENTATION)))
+
+;; Price fetching - uses oracle when set, falls back to stored price for testing
+(define-private (get-current-price)
+  (match (var-get price-oracle)
+    oracle (ok (unwrap! (get-stablecoin-price-from-oracle oracle) ERR-ORACLE-ERROR))
+    (ok (var-get current-price))))
+
+;; Collateral value calculation using the configured price feed
 (define-private (calculate-collateral-value (asset principal) (amount uint))
-  (let ((collateral-info (unwrap! (map-get? collateral-types {asset: asset}) (err u0))))
-    ;; For now, use a simple fallback calculation
-    ;; In production, this would call the price feed contract
-    (ok (* amount u100000000)))) ;; Fallback to $1.00 per unit
+  (let ((collateral-info (unwrap! (map-get? collateral-types {asset: asset}) ERR-INVALID-COLLATERAL-TYPE))
+        (oracle-price (unwrap! (get-asset-price-from-oracle (get price-feed collateral-info)) ERR-ORACLE-ERROR)))
+    (ok (* amount oracle-price))))
 
 ;; Check if a collateral position is safe (used for liquidation checks)
 (define-private (is-position-safe (user principal) (asset principal))
@@ -441,6 +453,7 @@
   (begin
     (asserts! (is-contract-owner) ERR-NOT-AUTHORIZED)
     (asserts! (is-valid-principal new-oracle) ERR-INVALID-RECIPIENT)
+    (asserts! (is-eq new-oracle .oracle) ERR-INVALID-IMPLEMENTATION)
     (var-set price-oracle (some new-oracle))
     (ok true)))
 
@@ -471,6 +484,7 @@
     (asserts! (var-get initialized) ERR-NOT-INITIALIZED)
     (asserts! (is-valid-principal asset) ERR-INVALID-RECIPIENT)
     (asserts! (is-valid-principal price-feed) ERR-INVALID-RECIPIENT)
+    (asserts! (is-eq price-feed .oracle) ERR-INVALID-IMPLEMENTATION)
     (asserts! (and (>= collateral-ratio u100) (<= collateral-ratio u300)) ERR-INVALID-AMOUNT)
     (asserts! (and (>= liquidation-threshold u100) (< liquidation-threshold collateral-ratio)) ERR-INVALID-AMOUNT)
     (asserts! (<= stability-fee u100) ERR-INVALID-AMOUNT) ;; Max 100% annual fee
